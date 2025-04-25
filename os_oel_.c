@@ -21,6 +21,7 @@ typedef struct {
 typedef struct {
     int startAddress;
     int size;
+ 
 } Hole;
 
 // Simple queue structure for processes waiting for memory
@@ -72,30 +73,31 @@ Process dequeue(ProcessQueue *q) {
 
 // Display the current memory state
 void displayMemoryState() {
-    printf("\n===== Memory State =====\n");
+    printf("\n----- Memory State ------\n");
     printf("Total Memory: %d units\n", MEMORY_SIZE);
     printf("Memory Used : %d units\n", memoryUsed);
     printf("Memory Free : %d units\n", MEMORY_SIZE - memoryUsed);
 
     // Show allocated processes
     printf("\nAllocated Processes:\n");
-    printf("PID\tStart\tSize\n");
+    printf("PID\tSize\n");
     for (int i = 0; i < processCount; i++) {
         if (processes[i].isAllocated) {
-            printf("%d\t%d\t%d\n", processes[i].pid, processes[i].startAddress, processes[i].size);
+            printf("%d\t%d\t%d\n", processes[i].pid,  processes[i].size);
         }
     }
 
     // Show free memory holes
-    printf("\nFree Holes:\n");
-    printf("Start\tSize\n");
+    if (holeCount !=0 ){
+        printf("\nFree Holes:\n");
+        printf("Start\t\tSize\n");
     for (int i = 0; i < holeCount; i++) {
-        printf("%d\t%d\n", holes[i].startAddress, holes[i].size);
+        printf("%d\t\t%d\n", holes[i].startAddress, holes[i].size);
     }
-
+    }
     // Show blocked (waiting) processes
     if (!isQueueEmpty(&waitingQueue)) {
-        printf("\nBlocked Processes (Waiting for Memory): ");
+        printf("\nSuspended Processes : ");
         for (int i = waitingQueue.front; i <= waitingQueue.rear; i++) {
             printf("%d ", waitingQueue.queue[i].pid);
         }
@@ -157,7 +159,7 @@ void allocateProcess(Process *p) {
     }
 
     // If no space available anywhere
-    printf("Memory full! Process %d is blocked.\n", p->pid);
+    printf("Memory full! Process %d is suspended.\n", p->pid);
 }
 
 // Free memory of a completed process
@@ -179,6 +181,7 @@ void simulate() {
 
     while (finishedCount < processCount) {
         // Check for newly arriving processes at this time
+        printf("\n--- Time: %d ---\n\n", time);
         for (int i = 0; i < processCount; i++) {
             if (processes[i].arrivalTime == time && !processes[i].isAllocated && !processes[i].isFinished) {
                 printf("Process %d arrived.\n", processes[i].pid);
@@ -192,10 +195,11 @@ void simulate() {
         for (int i = 0; i < processCount; i++) {
             if (processes[i].isAllocated) {
                 processes[i].remainingTime--;
-                if (processes[i].remainingTime == 0) {
+                if (processes[i].remainingTime < 0) {
                     printf("Process %d finished execution.\n", processes[i].pid);
                     freeProcess(&processes[i]);
                     finishedCount++;
+                    if(finishedCount==0) break;
 
                     // Try to allocate waiting processes after freeing memory
                     int qSize = (waitingQueue.rear - waitingQueue.front) + 1;
@@ -220,7 +224,7 @@ void simulate() {
             }
         }
 
-        printf("\n--- Time: %d ---\n", time);
+        // printf("\n--- Time: %d ---\n", time); //move to up //corect logic
         displayMemoryState();
 
         time++;
@@ -228,13 +232,18 @@ void simulate() {
 }
 
 int main() {
-    printf("===== Dynamic Partitioning Memory Management Simulation =====\n");
-    printf("Enter the total number of processes (minimum 1): ");
+    printf("\n\t\t_____________ Dynamic Partitioning Memory Management Simulation _____________\n");
+    printf("Enter the total number of processes (minimum 10): ");
     scanf("%d", &processCount);
-
-    if (processCount < 1) {
-        printf("At least 1 process required.\n");
-        return 1;
+    //exception handling 1
+    while (true){
+    if (processCount < 10) {
+        printf("At least 10 process required.\n");
+        main();
+     }
+     else{
+        break;
+     }
     }
 
     initializeQueue(&waitingQueue);
@@ -248,7 +257,7 @@ int main() {
         printf("Execution Time: ");
         scanf("%d", &processes[i].executionTime);
         processes[i].remainingTime = processes[i].executionTime;
-        printf("Size (in units): ");
+        printf("Size (in MBs): ");
         scanf("%d", &processes[i].size);
         processes[i].isAllocated = false;
         processes[i].isFinished = false;
@@ -256,6 +265,6 @@ int main() {
 
     simulate();
 
-    printf("\n=== Simulation Complete ===\n");
-    return 0;
+    printf("\t\t\n________________ Simulation Complete __________________\n");
+
 }
