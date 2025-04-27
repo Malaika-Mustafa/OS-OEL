@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define MAX_PROCESSES 100
 #define MEMORY_SIZE 1024
@@ -80,10 +81,10 @@ void displayMemoryState() {
 
     // Show allocated processes
     printf("\nAllocated Processes:\n");
-    printf("PID\tSize\n");
+    printf("PID\t\tSize\n");
     for (int i = 0; i < processCount; i++) {
         if (processes[i].isAllocated) {
-            printf("%d\t%d\t%d\n", processes[i].pid,  processes[i].size);
+            printf("%d\t\t%d\n", processes[i].pid,  processes[i].size);
         }
     }
 
@@ -92,7 +93,7 @@ void displayMemoryState() {
         printf("\nFree Holes:\n");
         printf("Start\t\tSize\n");
     for (int i = 0; i < holeCount; i++) {
-        printf("%d\t\t%d\n", holes[i].startAddress, holes[i].size);
+        printf("%d\t\t\t%d\n", holes[i].startAddress, holes[i].size);
     }
     }
     // Show blocked (waiting) processes
@@ -105,20 +106,38 @@ void displayMemoryState() {
     }
 }
 
-// Merge adjacent holes into a single bigger hole
+// Helper function to compare two holes based on start address
+int compareHoles(const void *a, const void *b) {
+    Hole *h1 = (Hole *)a;
+    Hole *h2 = (Hole *)b;
+    return h1->startAddress - h2->startAddress;
+}
+
+// Merges adjacent memory holes
 void mergeHoles() {
+    if (holeCount <= 1) return; // Nothing to merge if only one or zero holes
+
+    // Step 1: Sort holes array by start address
+    qsort(holes, holeCount, sizeof(Hole), compareHoles);
+
+    // Step 2: Merge adjacent holes
     for (int i = 0; i < holeCount - 1; i++) {
-        for (int j = i + 1; j < holeCount; j++) {
-            if (holes[i].startAddress + holes[i].size == holes[j].startAddress) {
-                holes[i].size += holes[j].size;
-                for (int k = j; k < holeCount - 1; k++)
-                    holes[k] = holes[k + 1];
-                holeCount--;
-                j--;
+        // Check if two holes are adjacent
+        if (holes[i].startAddress + holes[i].size == holes[i + 1].startAddress) {
+            // Merge holes[i] and holes[i+1]
+            holes[i].size += holes[i + 1].size;
+
+            // Shift the holes array left to remove holes[i+1]
+            for (int j = i + 1; j < holeCount - 1; j++) {
+                holes[j] = holes[j + 1];
             }
+            holeCount--;  // One less hole after merging
+
+            i--; // Important: Re-check the newly merged hole with next hole
         }
     }
 }
+
 
 // Try to allocate memory for a process
 void allocateProcess(Process *p) {
