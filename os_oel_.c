@@ -7,7 +7,8 @@
 #define MEMORY_SIZE 1024
 
 // Structure to represent a process
-typedef struct {
+typedef struct
+{
     int pid;
     int arrivalTime;
     int executionTime;
@@ -16,17 +17,19 @@ typedef struct {
     int startAddress;
     bool isAllocated;
     bool isFinished;
+    int completionTime; // Added completionTime
 } Process;
 
 // Structure to represent a free memory block (hole)
-typedef struct {
+typedef struct
+{
     int startAddress;
     int size;
- 
 } Hole;
 
 // Simple queue structure for processes waiting for memory
-typedef struct {
+typedef struct
+{
     int front, rear;
     Process queue[MAX_PROCESSES];
 } ProcessQueue;
@@ -40,19 +43,20 @@ int processCount = 0;
 int holeCount = 0;
 int memoryUsed = 0;
 
-// Initialize the waiting queue
-void initializeQueue(ProcessQueue *q) {
+void initializeQueue(ProcessQueue *q)
+{
     q->front = q->rear = -1;
 }
 
-// Check if the queue is empty
-bool isQueueEmpty(ProcessQueue *q) {
+bool isQueueEmpty(ProcessQueue *q)
+{
     return q->front == -1;
 }
 
-// Add a process to the queue
-void enqueue(ProcessQueue *q, Process p) {
-    if (q->rear == MAX_PROCESSES - 1) {
+void enqueue(ProcessQueue *q, Process p)
+{
+    if (q->rear == MAX_PROCESSES - 1)
+    {
         printf("Queue Overflow!\n");
         return;
     }
@@ -62,8 +66,8 @@ void enqueue(ProcessQueue *q, Process p) {
     q->queue[q->rear] = p;
 }
 
-// Remove and return the first process from the queue
-Process dequeue(ProcessQueue *q) {
+Process dequeue(ProcessQueue *q)
+{
     Process p = q->queue[q->front];
     if (q->front == q->rear)
         q->front = q->rear = -1;
@@ -72,88 +76,89 @@ Process dequeue(ProcessQueue *q) {
     return p;
 }
 
-// Display the current memory state
-void displayMemoryState() {
+void displayMemoryState()
+{
     printf("\n----- Memory State ------\n");
     printf("Total Memory: %d units\n", MEMORY_SIZE);
     printf("Memory Used : %d units\n", memoryUsed);
     printf("Memory Free : %d units\n", MEMORY_SIZE - memoryUsed);
 
-    // Show allocated processes
     printf("\nAllocated Processes:\n");
-    printf("PID\t\tSize\n");
-    for (int i = 0; i < processCount; i++) {
-        if (processes[i].isAllocated) {
-            printf("%d\t\t%d\n", processes[i].pid,  processes[i].size);
+    printf("PID\t\tSize\t\tStart Address\n");
+    for (int i = 0; i < processCount; i++)
+    {
+        if (processes[i].isAllocated)
+        {
+            printf("%d\t\t%d\t\t%d\n", processes[i].pid, processes[i].size, processes[i].startAddress);
         }
     }
 
-    // Show free memory holes
-    if (holeCount !=0 ){
+    if (holeCount != 0)
+    {
         printf("\nFree Holes:\n");
         printf("Start\t\tSize\n");
-    for (int i = 0; i < holeCount; i++) {
-        printf("%d\t\t%d\n", holes[i].startAddress, holes[i].size);
+        for (int i = 0; i < holeCount; i++)
+        {
+            printf("%d\t\t%d\n", holes[i].startAddress, holes[i].size);
+        }
     }
-    }
-    // Show blocked (waiting) processes
-    if (!isQueueEmpty(&waitingQueue)) {
+
+    if (!isQueueEmpty(&waitingQueue))
+    {
         printf("\nSuspended Processes : ");
-        for (int i = waitingQueue.front; i <= waitingQueue.rear; i++) {
+        for (int i = waitingQueue.front; i <= waitingQueue.rear; i++)
+        {
             printf("%d ", waitingQueue.queue[i].pid);
         }
         printf("\n");
     }
 }
 
-// Helper function to compare two holes based on start address
-int compareHoles(const void *a, const void *b) {
+int compareHoles(const void *a, const void *b)
+{
     Hole *h1 = (Hole *)a;
     Hole *h2 = (Hole *)b;
     return h1->startAddress - h2->startAddress;
 }
 
-// Merges adjacent memory holes
-void mergeHoles() {
-    if (holeCount <= 1) return; // Nothing to merge if only one or zero holes
-
-    // Step 1: Sort holes array by start address
+void mergeHoles()
+{
+    if (holeCount <= 1)
+        return;
     qsort(holes, holeCount, sizeof(Hole), compareHoles);
-
-    // Step 2: Merge adjacent holes
-    for (int i = 0; i < holeCount - 1; i++) {
-        // Check if two holes are adjacent
-        if (holes[i].startAddress + holes[i].size == holes[i + 1].startAddress) {
-            // Merge holes[i] and holes[i+1]
+    for (int i = 0; i < holeCount - 1; i++)
+    {
+        if (holes[i].startAddress + holes[i].size == holes[i + 1].startAddress)
+        {
             holes[i].size += holes[i + 1].size;
-
-            // Shift the holes array left to remove holes[i+1]
-            for (int j = i + 1; j < holeCount - 1; j++) {
+            for (int j = i + 1; j < holeCount - 1; j++)
+            {
                 holes[j] = holes[j + 1];
             }
-            holeCount--;  // One less hole after merging
-
-            i--; // Important: Re-check the newly merged hole with next hole
+            holeCount--;
+            i--;
         }
     }
 }
 
-
-// Try to allocate memory for a process
-void allocateProcess(Process *p) {
-    // Check if process can be placed in any existing hole
-    for (int i = 0; i < holeCount; i++) {
-        if (holes[i].size >= p->size) {
+void allocateProcess(Process *p)
+{
+    for (int i = 0; i < holeCount; i++)
+    {
+        if (holes[i].size >= p->size)
+        {
             p->startAddress = holes[i].startAddress;
             p->isAllocated = true;
             memoryUsed += p->size;
 
-            // Update or remove the hole
-            if (holes[i].size == p->size) {
+            if (holes[i].size == p->size)
+            {
                 for (int j = i; j < holeCount - 1; j++)
                     holes[j] = holes[j + 1];
                 holeCount--;
-            } else {
+            }
+            else
+            {
                 holes[i].startAddress += p->size;
                 holes[i].size -= p->size;
             }
@@ -161,28 +166,30 @@ void allocateProcess(Process *p) {
         }
     }
 
-    // If no hole, check if space is available at the end
-    if (MEMORY_SIZE - memoryUsed >= p->size) {
+    if (MEMORY_SIZE - memoryUsed >= p->size)
+    {
         p->startAddress = 0;
-        for (int i = 0; i < processCount; i++) {
-            if (processes[i].isAllocated) {
+        for (int i = 0; i < processCount; i++)
+        {
+            if (processes[i].isAllocated)
+            {
                 if (p->startAddress < processes[i].startAddress + processes[i].size)
                     p->startAddress = processes[i].startAddress + processes[i].size;
             }
         }
-        if (p->startAddress + p->size <= MEMORY_SIZE) {
+        if (p->startAddress + p->size <= MEMORY_SIZE)
+        {
             p->isAllocated = true;
             memoryUsed += p->size;
             return;
         }
     }
 
-    // If no space available anywhere
     printf("Memory full! Process %d is suspended.\n", p->pid);
 }
 
-// Free memory of a completed process
-void freeProcess(Process *p) {
+void freeProcess(Process *p, int currentTime)
+{
     Hole h;
     h.startAddress = p->startAddress;
     h.size = p->size;
@@ -190,19 +197,22 @@ void freeProcess(Process *p) {
     memoryUsed -= p->size;
     p->isAllocated = false;
     p->isFinished = true;
+    p->completionTime = currentTime;
     mergeHoles();
 }
 
-// Run the simulation
-void simulate() {
+void simulate()
+{
     int time = 0;
     int finishedCount = 0;
 
-    while (finishedCount < processCount) {
-        // Check for newly arriving processes at this time
+    while (finishedCount < processCount)
+    {
         printf("\n--- Time: %d ---\n\n", time);
-        for (int i = 0; i < processCount; i++) {
-            if (processes[i].arrivalTime == time && !processes[i].isAllocated && !processes[i].isFinished) {
+        for (int i = 0; i < processCount; i++)
+        {
+            if (processes[i].arrivalTime == time && !processes[i].isAllocated && !processes[i].isFinished)
+            {
                 printf("Process %d arrived.\n", processes[i].pid);
                 allocateProcess(&processes[i]);
                 if (!processes[i].isAllocated)
@@ -210,32 +220,40 @@ void simulate() {
             }
         }
 
-        // Execute allocated processes
-        for (int i = 0; i < processCount; i++) {
-            if (processes[i].isAllocated) {
+        for (int i = 0; i < processCount; i++)
+        {
+            if (processes[i].isAllocated)
+            {
                 processes[i].remainingTime--;
-                if (processes[i].remainingTime < 0) {
+                if (processes[i].remainingTime < 0)
+                {
                     printf("Process %d finished execution.\n", processes[i].pid);
-                    freeProcess(&processes[i]);
+                    freeProcess(&processes[i], time);
                     finishedCount++;
-                    if(finishedCount==0) break;
+                    if (finishedCount == 0)
+                        break;
 
-                    // Try to allocate waiting processes after freeing memory
                     int qSize = (waitingQueue.rear - waitingQueue.front) + 1;
-                    for (int j = 0; j < qSize; j++) {
-                        if (isQueueEmpty(&waitingQueue)) break;
+                    for (int j = 0; j < qSize; j++)
+                    {
+                        if (isQueueEmpty(&waitingQueue))
+                            break;
                         Process waitingProcess = dequeue(&waitingQueue);
                         allocateProcess(&waitingProcess);
-                        if (waitingProcess.isAllocated) {
+                        if (waitingProcess.isAllocated)
+                        {
                             printf("Process %d moved from queue to memory.\n", waitingProcess.pid);
-                            // Update the actual process record
-                            for (int k = 0; k < processCount; k++) {
-                                if (processes[k].pid == waitingProcess.pid) {
+                            for (int k = 0; k < processCount; k++)
+                            {
+                                if (processes[k].pid == waitingProcess.pid)
+                                {
                                     processes[k] = waitingProcess;
                                     break;
                                 }
                             }
-                        } else {
+                        }
+                        else
+                        {
                             enqueue(&waitingQueue, waitingProcess);
                         }
                     }
@@ -243,13 +261,35 @@ void simulate() {
             }
         }
 
-        // printf("\n--- Time: %d ---\n", time); //move to up //corect logic
         displayMemoryState();
-
         time++;
     }
 }
-int main() {
+
+void printTurnaroundTimes()
+{
+    printf("\n\n\t--- Process Turnaround Times ---\n");
+    printf("Process\tArrival Time\tService Time\tTurnaround Time\n");
+
+    int totalTurnaroundTime = 0;
+    for (int i = 0; i < processCount; i++)
+    {
+        int turnaroundTime = processes[i].completionTime - processes[i].arrivalTime;
+        totalTurnaroundTime += turnaroundTime;
+        printf("%d\t\t%d\t\t%d\t\t%d\n",
+               processes[i].pid,
+               processes[i].arrivalTime,
+               processes[i].executionTime,
+               turnaroundTime);
+    }
+    float averageTurnaroundTime = (float)totalTurnaroundTime / processCount;
+
+    printf("\nThe Average Turnaround Time: %.2f units\n", averageTurnaroundTime );
+
+}
+
+int main()
+{
     FILE *file;
     char filename[100];
 
@@ -258,15 +298,16 @@ int main() {
     scanf("%s", filename);
 
     file = fopen(filename, "r");
-    if (file == NULL) {
+    if (file == NULL)
+    {
         printf("Error: Could not open file %s\n", filename);
         return 1;
     }
 
     fscanf(file, "%d", &processCount);
 
-    // Exception handling for number of processes
-    if (processCount < 3) {
+    if (processCount < 3)
+    {
         printf("Error: At least 3 processes required.\n");
         fclose(file);
         return 1;
@@ -274,9 +315,11 @@ int main() {
 
     initializeQueue(&waitingQueue);
 
-    for (int i = 0; i < processCount; i++) {
+    for (int i = 0; i < processCount; i++)
+    {
         processes[i].pid = i + 1;
-        if (fscanf(file, "%d %d %d", &processes[i].arrivalTime, &processes[i].executionTime, &processes[i].size) != 3) {
+        if (fscanf(file, "%d %d %d", &processes[i].arrivalTime, &processes[i].executionTime, &processes[i].size) != 3)
+        {
             printf("Error: Incorrect format in file.\n");
             fclose(file);
             return 1;
@@ -284,51 +327,16 @@ int main() {
         processes[i].remainingTime = processes[i].executionTime;
         processes[i].isAllocated = false;
         processes[i].isFinished = false;
+        processes[i].completionTime = 0;
     }
 
     fclose(file);
 
     simulate();
 
+    printTurnaroundTimes();
+
     printf("\t\t\n________________ Simulation Complete __________________\n");
 
     return 0;
 }
-
-// int main() {
-//     printf("\n\t\t_____________ Dynamic Partitioning Memory Management Simulation _____________\n");
-//     printf("Enter the total number of processes (minimum 10): ");
-//     scanf("%d", &processCount);
-//     //exception handling 1
-//     while (true){
-//     if (processCount < 3) {
-//         printf("At least 10 process required.\n");
-//         main();
-//      }
-//      else{
-//         break;
-//      }
-//     }
-
-//     initializeQueue(&waitingQueue);
-
-//     // Input details for each process
-//     for (int i = 0; i < processCount; i++) {
-//         processes[i].pid = i + 1;
-//         printf("\nEnter details for Process %d:\n", i + 1);
-//         printf("Arrival Time: ");
-//         scanf("%d", &processes[i].arrivalTime);
-//         printf("Execution Time: ");
-//         scanf("%d", &processes[i].executionTime);
-//         processes[i].remainingTime = processes[i].executionTime;
-//         printf("Size (in MBs): ");
-//         scanf("%d", &processes[i].size);
-//         processes[i].isAllocated = false;
-//         processes[i].isFinished = false;
-//     }
-
-//     simulate();
-
-//     printf("\t\t\n________________ Simulation Complete __________________\n");
-
-// }
