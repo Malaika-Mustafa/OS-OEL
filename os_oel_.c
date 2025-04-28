@@ -93,7 +93,7 @@ void displayMemoryState() {
         printf("\nFree Holes:\n");
         printf("Start\t\tSize\n");
     for (int i = 0; i < holeCount; i++) {
-        printf("%d\t\t\t%d\n", holes[i].startAddress, holes[i].size);
+        printf("%d\t\t%d\n", holes[i].startAddress, holes[i].size);
     }
     }
     // Show blocked (waiting) processes
@@ -249,41 +249,86 @@ void simulate() {
         time++;
     }
 }
-
 int main() {
+    FILE *file;
+    char filename[100];
+
     printf("\n\t\t_____________ Dynamic Partitioning Memory Management Simulation _____________\n");
-    printf("Enter the total number of processes (minimum 10): ");
-    scanf("%d", &processCount);
-    //exception handling 1
-    while (true){
-    if (processCount < 5) {
-        printf("At least 10 process required.\n");
-        main();
-     }
-     else{
-        break;
-     }
+    printf("Enter the input filename (e.g., processes.txt): ");
+    scanf("%s", filename);
+
+    file = fopen(filename, "r");
+    if (file == NULL) {
+        printf("Error: Could not open file %s\n", filename);
+        return 1;
+    }
+
+    fscanf(file, "%d", &processCount);
+
+    // Exception handling for number of processes
+    if (processCount < 3) {
+        printf("Error: At least 3 processes required.\n");
+        fclose(file);
+        return 1;
     }
 
     initializeQueue(&waitingQueue);
 
-    // Input details for each process
     for (int i = 0; i < processCount; i++) {
         processes[i].pid = i + 1;
-        printf("\nEnter details for Process %d:\n", i + 1);
-        printf("Arrival Time: ");
-        scanf("%d", &processes[i].arrivalTime);
-        printf("Execution Time: ");
-        scanf("%d", &processes[i].executionTime);
+        if (fscanf(file, "%d %d %d", &processes[i].arrivalTime, &processes[i].executionTime, &processes[i].size) != 3) {
+            printf("Error: Incorrect format in file.\n");
+            fclose(file);
+            return 1;
+        }
         processes[i].remainingTime = processes[i].executionTime;
-        printf("Size (in MBs): ");
-        scanf("%d", &processes[i].size);
         processes[i].isAllocated = false;
         processes[i].isFinished = false;
     }
+
+    fclose(file);
 
     simulate();
 
     printf("\t\t\n________________ Simulation Complete __________________\n");
 
+    return 0;
 }
+
+// int main() {
+//     printf("\n\t\t_____________ Dynamic Partitioning Memory Management Simulation _____________\n");
+//     printf("Enter the total number of processes (minimum 10): ");
+//     scanf("%d", &processCount);
+//     //exception handling 1
+//     while (true){
+//     if (processCount < 3) {
+//         printf("At least 10 process required.\n");
+//         main();
+//      }
+//      else{
+//         break;
+//      }
+//     }
+
+//     initializeQueue(&waitingQueue);
+
+//     // Input details for each process
+//     for (int i = 0; i < processCount; i++) {
+//         processes[i].pid = i + 1;
+//         printf("\nEnter details for Process %d:\n", i + 1);
+//         printf("Arrival Time: ");
+//         scanf("%d", &processes[i].arrivalTime);
+//         printf("Execution Time: ");
+//         scanf("%d", &processes[i].executionTime);
+//         processes[i].remainingTime = processes[i].executionTime;
+//         printf("Size (in MBs): ");
+//         scanf("%d", &processes[i].size);
+//         processes[i].isAllocated = false;
+//         processes[i].isFinished = false;
+//     }
+
+//     simulate();
+
+//     printf("\t\t\n________________ Simulation Complete __________________\n");
+
+// }
