@@ -237,7 +237,7 @@ int main() {
     scanf("%d", &processCount);
     //exception handling 1
     while (true){
-    if (processCount < 10) {
+    if (processCount < 5) {
         printf("At least 10 process required.\n");
         main();
      }
